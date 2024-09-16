@@ -1,0 +1,25 @@
+[package]
+name = "rust-wasm-lib"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = { version = "0.2.93", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.33"
+web-sys = { version = "0.3.70", features = [
+    "Window", "Document", "HtmlCanvasElement", "CanvasRenderingContext2d",
+    "AudioContext", "AnalyserNode", "MediaDevices", "Navigator",
+    "MediaStreamConstraints", "MediaStream", "MediaStreamAudioSourceNode"
+] }
+js-sys = "0.3.70"
+plotters = "0.3.5"
+plotters-canvas = "0.3.0"
+wee_alloc = "0.4.5"
+rand = "0.8.5"
+getrandom = { version = "0.2", features = ["js"] }
+
+[profile.release]
+panic = "abort"
