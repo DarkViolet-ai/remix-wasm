@@ -176,9 +176,7 @@ pub struct Universe {
 
 #[wasm_bindgen]
 impl Universe {
-    pub fn new() -> Universe {
-        let width = 64;
-        let height = 64;
+    pub fn new(width: u32, height: u32) -> Universe {
         let mut rng = rand::thread_rng();
         let cells = (0..width * height)
             .map(|_| rng.gen_bool(0.5))
@@ -186,19 +184,19 @@ impl Universe {
         Universe { width, height, cells }
     }
 
-    pub fn tick(&mut self) {
+    pub fn tick(&mut self, birth_threshold: u8, survival_threshold_min: u8, survival_threshold_max: u8) {
         let mut next = self.cells.clone();
 
         for row in 0..self.height {
             for col in 0..self.width {
                 let idx = self.get_index(row, col);
+                let cell = self.cells[idx];
                 let live_neighbors = self.live_neighbor_count(row, col);
 
-                next[idx] = match (self.cells[idx], live_neighbors) {
-                    (true, x) if x < 2 => false,
-                    (true, 2) | (true, 3) => true,
-                    (true, x) if x > 3 => false,
-                    (false, 3) => true,
+                next[idx] = match (cell, live_neighbors) {
+                    (true, x) if x < survival_threshold_min => false,
+                    (true, x) if x > survival_threshold_max => false,
+                    (false, x) if x == birth_threshold => true,
                     (otherwise, _) => otherwise,
                 };
             }
@@ -225,7 +223,6 @@ impl Universe {
 
     fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
-
         for delta_row in [self.height - 1, 0, 1].iter().cloned() {
             for delta_col in [self.width - 1, 0, 1].iter().cloned() {
                 if delta_row == 0 && delta_col == 0 {
@@ -238,12 +235,7 @@ impl Universe {
                 count += self.cells[idx] as u8;
             }
         }
-
         count
-    }
-
-    pub fn render(&self) -> String {
-        self.to_string()
     }
 
     pub fn toggle_cell(&mut self, row: u32, column: u32) {
