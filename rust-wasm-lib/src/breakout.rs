@@ -20,6 +20,7 @@ pub struct Breakout {
     is_running: bool,
     move_left: bool,
     move_right: bool,
+    initial_ball_speed: f64,
 }
 
 struct Block {
@@ -61,6 +62,8 @@ impl Breakout {
             }
         }
 
+        let initial_ball_speed = 2.4; // Reduced by 40% from 4.0
+
         Ok(Breakout {
             width,
             height,
@@ -79,6 +82,7 @@ impl Breakout {
             is_running: false,
             move_left: false,
             move_right: false,
+            initial_ball_speed,
         })
     }
 
@@ -110,7 +114,19 @@ impl Breakout {
         // Ball collision with paddle
         if self.ball_y + self.ball_radius >= self.height as f64 - self.paddle_height &&
            self.ball_x >= self.paddle_x && self.ball_x <= self.paddle_x + self.paddle_width {
-            self.ball_dy = -self.ball_dy;
+            // Calculate where the ball hit the paddle
+            let hit_pos = (self.ball_x - self.paddle_x) / self.paddle_width;
+            
+            // Adjust the ball's horizontal velocity based on where it hit the paddle
+            self.ball_dx = (hit_pos - 0.5) * 6.0;
+            
+            // Ensure the ball always moves upwards after hitting the paddle
+            self.ball_dy = -self.ball_dy.abs();
+            
+            // Normalize the velocity to maintain a consistent speed
+            let speed = (self.ball_dx.powi(2) + self.ball_dy.powi(2)).sqrt();
+            self.ball_dx = self.ball_dx / speed * self.initial_ball_speed;
+            self.ball_dy = self.ball_dy / speed * self.initial_ball_speed;
         }
 
         // Ball collision with blocks
@@ -120,6 +136,11 @@ impl Breakout {
                 self.blocks[i].active = false;
                 break;
             }
+        }
+
+        // Game over condition
+        if self.ball_y - self.ball_radius > self.height as f64 {
+            self.is_running = false;
         }
     }
 
@@ -188,33 +209,30 @@ impl Breakout {
 
     pub fn toggle_game(&mut self) {
         self.is_running = !self.is_running;
-        // If the game is starting, reset the ball position
-        if self.is_running {
-            self.ball_x = self.width as f64 / 2.0;
-            self.ball_y = self.height as f64 - 30.0;
+        if self.is_running && self.ball_y - self.ball_radius > self.height as f64 {
+            self.reset_ball();
         }
-    }
-
-    pub fn is_running(&self) -> bool {
-        self.is_running
     }
 
     pub fn restart(&mut self) {
-        // Reset ball position
-        self.ball_x = self.width as f64 / 2.0;
-        self.ball_y = self.height as f64 - 30.0;
-        self.ball_dx = 2.0;
-        self.ball_dy = -2.0;
-
-        // Reset paddle position
+        self.reset_ball();
         self.paddle_x = (self.width as f64 - self.paddle_width) / 2.0;
-
-        // Reset blocks
         for block in &mut self.blocks {
             block.active = true;
         }
-
-        // Stop the game
         self.is_running = false;
+    }
+
+    fn reset_ball(&mut self) {
+        self.ball_x = self.width as f64 / 2.0;
+        self.ball_y = self.height as f64 - 30.0 - self.ball_radius;
+        let angle = js_sys::Math::random() * std::f64::consts::PI / 2.0 + std::f64::consts::PI / 4.0;
+        self.ball_dx = self.initial_ball_speed * angle.cos();
+        self.ball_dy = -self.initial_ball_speed * angle.sin();
+    }
+
+    #[wasm_bindgen(js_name = isRunning)]
+    pub fn is_running(&self) -> bool {
+        self.is_running
     }
 }

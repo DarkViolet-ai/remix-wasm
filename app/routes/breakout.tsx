@@ -9,7 +9,7 @@ export default function BreakoutGame() {
   const toggleGame = useCallback(() => {
     if (gameRef.current) {
       gameRef.current.toggle_game();
-      setIsRunning(gameRef.current.is_running());
+      setIsRunning(gameRef.current.isRunning());
     }
   }, []);
 
@@ -43,7 +43,7 @@ export default function BreakoutGame() {
       gameRef.current = newGame;
 
       const gameLoop = () => {
-        if (newGame.is_running()) {
+        if (newGame.isRunning()) {
           newGame.update();
         }
         newGame.draw();
