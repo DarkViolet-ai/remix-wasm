@@ -34,8 +34,8 @@ export default function BreakoutGame() {
         return;
       }
 
-      canvas.width = 480;
-      canvas.height = 320;
+      canvas.width = 1200;
+      canvas.height = 800;
 
       console.log("Creating new Breakout game...");
       const newGame = new Breakout("breakout-canvas", 5, 8);
