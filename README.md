@@ -8,7 +8,9 @@ npm run dev
 ```
 
 Note that your rust toolchain must be installed and up to date.
+
 Navigate to http://localhost:3000/game-of-life to see the game of life example.
+
 Navigate to http://localhost:3000/breakout to see the breakout game example.
 
 ## Intro
