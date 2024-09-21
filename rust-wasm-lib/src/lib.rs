@@ -1,19 +1,6 @@
 use wasm_bindgen::prelude::*;
-use web_sys::{CanvasRenderingContext2d, HtmlCanvasElement};
-use wasm_bindgen_futures::spawn_local;
-use std::rc::Rc;
-use std::cell::RefCell;
-use plotters::prelude::*;
-use plotters_canvas::CanvasBackend;
 use rand::Rng;
 
-
-fn request_animation_frame(f: &Closure<dyn FnMut()>) {
-    web_sys::window()
-        .unwrap()
-        .request_animation_frame(f.as_ref().unchecked_ref())
-        .unwrap();
-}
 
 #[wasm_bindgen]
 extern {
@@ -24,7 +11,7 @@ extern {
 pub struct Universe {
     width: u32,
     height: u32,
-    cells: Vec<bool>,
+    cells: Vec<u8>,
 }
 
 #[wasm_bindgen]
@@ -32,13 +19,13 @@ impl Universe {
     pub fn new(width: u32, height: u32) -> Universe {
         let mut rng = rand::thread_rng();
         let cells = (0..width * height)
-            .map(|_| rng.gen_bool(0.5))
+            .map(|_| if rng.gen_bool(0.5) { 1 } else { 0 })
             .collect();
         Universe { width, height, cells }
     }
 
     pub fn tick(&mut self, birth_threshold: u8, survival_threshold_min: u8, survival_threshold_max: u8) {
-        let mut next = self.cells.clone();
+        let mut next = vec![0; self.width as usize * self.height as usize];
 
         for row in 0..self.height {
             for col in 0..self.width {
@@ -47,15 +34,15 @@ impl Universe {
                 let live_neighbors = self.live_neighbor_count(row, col);
 
                 next[idx] = match (cell, live_neighbors) {
-                    (true, x) if x < survival_threshold_min => false,
-                    (true, x) if x > survival_threshold_max => false,
-                    (false, x) if x == birth_threshold => true,
+                    (1, x) if x < survival_threshold_min => 0,
+                    (1, x) if x > survival_threshold_max => 0,
+                    (0, x) if x == birth_threshold => 1,
                     (otherwise, _) => otherwise,
                 };
             }
         }
 
-        self.cells = next;
+        std::mem::swap(&mut self.cells, &mut next);
     }
 
     pub fn width(&self) -> u32 {
@@ -66,7 +53,7 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const bool {
+    pub fn cells(&self) -> *const u8 {
         self.cells.as_ptr()
     }
 
@@ -101,7 +88,7 @@ impl std::fmt::Display for Universe {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for line in self.cells.as_slice().chunks(self.width as usize) {
             for &cell in line {
-                let symbol = if cell { '◼' } else { '◻' };
+                let symbol = if cell == 1 { '◼' } else { '◻' };
                 write!(f, "{}", symbol)?;
             }
             write!(f, "\n")?;

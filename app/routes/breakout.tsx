@@ -37,9 +37,7 @@ export default function BreakoutGame() {
       canvas.width = 1200;
       canvas.height = 800;
 
-      console.log("Creating new Breakout game...");
       const newGame = new Breakout("breakout-canvas", 5, 8);
-      console.log("Breakout game created");
       gameRef.current = newGame;
 
       const gameLoop = () => {
